@@ -51,6 +51,7 @@ func (p *Parser) Parse() (*HTTPRequest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing body: %s", err)
 	}
+
 	request.body = body
 	return &request, nil
 }
@@ -102,6 +103,9 @@ func (p *Parser) getContentLength(headers []string) int {
 
 func (p *Parser) parseBody(contentLength int) (string, error) {
 	body := make([]byte, contentLength)
-	p.reader.Read(body)
+	_, err := p.reader.Read(body)
+	if err != nil {
+		return "", err
+	}
 	return string(body), nil
 }

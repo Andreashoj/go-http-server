@@ -5,17 +5,18 @@ import (
 	"net"
 
 	"github.com/Andreashoj/go-http-server/internal/parser"
+	"github.com/Andreashoj/go-http-server/internal/router"
 )
 
-func StartServer() error {
-	ln, err := net.Listen("tcp", ":8080")
+func StartServer(port string, router router.Router) error {
+	listener, err := net.Listen("tcp", port)
 	if err != nil {
 		return fmt.Errorf("Failed creating listener for TCP on port: 8080, with error %s\n", err)
 	}
 
 	go func() {
 		for {
-			cn, err := ln.Accept()
+			cn, err := listener.Accept()
 			if err != nil {
 				fmt.Printf("Couldn't accept incoming TCP request with error: %s", err)
 			}
@@ -28,9 +29,9 @@ func StartServer() error {
 					fmt.Printf("failed parsing http request: %s", err)
 					return
 				}
-				fmt.Println("received: ", request)
-				response := "YOU LITTLE PRICK!"
-				fmt.Fprint(cn, response)
+
+				route := router.FindMatchingRoute(request)
+				route.Handler(cn)
 			}()
 		}
 	}()
