@@ -6,10 +6,12 @@ import (
 
 	"github.com/Andreashoj/go-http-server/internal/parser"
 	"github.com/Andreashoj/go-http-server/internal/router"
+	"github.com/Andreashoj/go-http-server/internal/serializer"
 )
 
 func StartServer(port string, router router.Router) error {
 	listener, err := net.Listen("tcp", port)
+
 	if err != nil {
 		return fmt.Errorf("Failed creating listener for TCP on port: 8080, with error %s\n", err)
 	}
@@ -31,7 +33,10 @@ func StartServer(port string, router router.Router) error {
 				}
 
 				route := router.FindMatchingRoute(request)
-				route.Handler(cn)
+
+				// Writer
+				writer := serializer.NewWriter(cn)
+				route.Handler(writer)
 			}()
 		}
 	}()
