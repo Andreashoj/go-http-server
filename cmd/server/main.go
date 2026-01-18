@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Andreashoj/go-http-server/internal/router"
-	"github.com/Andreashoj/go-http-server/internal/serializer"
 	"github.com/Andreashoj/go-http-server/internal/server"
 	"github.com/Andreashoj/go-http-server/internal/tests"
 )
@@ -12,8 +11,9 @@ import (
 func main() {
 	r := router.NewRouter()
 
-	r.Post("test", func(writer serializer.HTTPWriter) {
-		writer.Writer("epic post handler yo\n")
+	r.Post("test", func(w router.HTTPWriter) {
+		w.Header().Add(router.ContentLength, "10")
+		w.Respond("epic post handler yo\n", 200)
 		// Use own custom writer, that write will be used to format the request
 	})
 

@@ -6,10 +6,9 @@ import (
 
 	"github.com/Andreashoj/go-http-server/internal/parser"
 	"github.com/Andreashoj/go-http-server/internal/router"
-	"github.com/Andreashoj/go-http-server/internal/serializer"
 )
 
-func StartServer(port string, router router.Router) error {
+func StartServer(port string, r router.Router) error {
 	listener, err := net.Listen("tcp", port)
 
 	if err != nil {
@@ -32,10 +31,10 @@ func StartServer(port string, router router.Router) error {
 					return
 				}
 
-				route := router.FindMatchingRoute(request)
+				route := r.FindMatchingRoute(request)
 
 				// Writer
-				writer := serializer.NewWriter(cn)
+				writer := router.NewWriter(cn, route)
 				route.Handler(writer)
 			}()
 		}
