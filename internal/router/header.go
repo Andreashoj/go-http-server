@@ -8,7 +8,6 @@ const (
 
 type Header interface {
 	Add(header HeaderType, value interface{})
-	Delete(header HeaderType)
 	Get() map[HeaderType]string
 }
 
@@ -27,10 +26,6 @@ func (h *httpWriter) Header() Header {
 func (h *header) Add(headerType HeaderType, value interface{}) {
 	h.value[headerType] = value.(string)
 	h.writer.addHeader(h)
-}
-
-func (h *header) Delete(header HeaderType) {
-
 }
 
 func (h *header) Get() map[HeaderType]string {

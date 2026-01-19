@@ -45,11 +45,10 @@ func createPostRequest(conn net.Conn) {
 		body,
 	)
 
-	status, err := bufio.NewReader(conn).ReadString('\n')
+	_, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
 		fmt.Printf("failed reading response from HTTP server: %s\n", err)
 	}
-	fmt.Println("here", status)
 }
 
 func createGetRequest(conn net.Conn) {

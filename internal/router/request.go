@@ -16,6 +16,7 @@ type HTTPRequest interface {
 	Body() string
 	GetQueryParam(key string) (string, error)
 	Url() string
+	Method() Request
 }
 
 type httpRequest struct {
@@ -24,6 +25,7 @@ type httpRequest struct {
 	body      string
 	params    map[string]string
 	url       string
+	method    Request
 }
 
 func NewHTTPRequest() HTTPRequest {
@@ -51,4 +53,8 @@ func (r *httpRequest) Body() string {
 
 func (r *httpRequest) Url() string {
 	return r.url
+}
+
+func (r *httpRequest) Method() Request {
+	return r.method
 }

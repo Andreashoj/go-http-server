@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/Andreashoj/go-http-server/internal/router"
 )
@@ -26,6 +27,10 @@ func StartServer(port string, r router.Router) error {
 				parser := router.Listen(cn)
 				request, err := parser.Parse()
 				if err != nil {
+					if strings.Contains(err.Error(), "EOF") { // handles empty requests
+						return
+					}
+
 					fmt.Printf("failed parsing http request: %s", err)
 					return
 				}

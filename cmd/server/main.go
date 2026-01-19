@@ -21,10 +21,8 @@ func main() {
 		}
 		fmt.Println(param)
 
-		w.Header().Add(router.ContentLength, "10")
-
 		// Fix \n
-		w.Respond("epic post handler yo\n", 200)
+		w.Respond("epicposthasd fasdf asdf asd", 200)
 
 		// Use own custom writer, that write will be used to format the request
 	})

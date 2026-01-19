@@ -27,7 +27,7 @@ func (r *router) add(route route) {
 
 func (r *router) FindMatchingRoute(request HTTPRequest) *route {
 	for _, routeEntry := range r.routes {
-		if routeEntry.Url == request.Url() { // Make sure that
+		if routeEntry.Method == request.Method() && routeEntry.Url == request.Url() {
 			return &routeEntry
 		}
 	}

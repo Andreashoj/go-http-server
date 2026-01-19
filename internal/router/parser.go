@@ -23,12 +23,14 @@ func Listen(conn net.Conn) *Parser {
 func (p *Parser) Parse() (HTTPRequest, error) {
 	var request httpRequest
 	startLine, err := p.parseStartline()
+
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing startline: %s", err)
 	}
 	request.startLine = startLine
 	request.url = p.parseUrl(startLine)
 	request.params = p.parseParams(startLine)
+	request.method = p.parseMethod(startLine)
 
 	headers, err := p.parseHeaders()
 	if err != nil {
@@ -59,6 +61,10 @@ func (p *Parser) parseStartline() (string, error) {
 	}
 
 	return startLine, nil
+}
+
+func (p *Parser) parseMethod(startLine string) Request {
+	return Request(strings.Split(startLine, " ")[0])
 }
 
 func (p *Parser) parseUrl(startLine string) string {
