@@ -5,8 +5,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-
-	"github.com/Andreashoj/go-http-server/internal/tests"
 )
 
 type HTTPWriter interface {
@@ -17,11 +15,11 @@ type HTTPWriter interface {
 
 type httpWriter struct {
 	conn    net.Conn
-	method  tests.Request
+	method  Request
 	headers []Header
 }
 
-func NewWriter(conn net.Conn, route route) HTTPWriter {
+func NewHTTPWriter(conn net.Conn, route *route) HTTPWriter {
 	return &httpWriter{
 		conn:   conn,
 		method: route.Method,

@@ -1,4 +1,4 @@
-package parser
+package router
 
 import (
 	"bufio"
@@ -13,12 +13,6 @@ type Parser struct {
 	reader *bufio.Reader
 }
 
-type HTTPRequest struct {
-	startLine string
-	headers   []string
-	body      string
-}
-
 func Listen(conn net.Conn) *Parser {
 	return &Parser{
 		conn:   conn,
@@ -26,13 +20,15 @@ func Listen(conn net.Conn) *Parser {
 	}
 }
 
-func (p *Parser) Parse() (*HTTPRequest, error) {
-	var request HTTPRequest
+func (p *Parser) Parse() (HTTPRequest, error) {
+	var request httpRequest
 	startLine, err := p.parseStartline()
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing startline: %s", err)
 	}
 	request.startLine = startLine
+	request.url = p.parseUrl(startLine)
+	request.params = p.parseParams(startLine)
 
 	headers, err := p.parseHeaders()
 	if err != nil {
@@ -63,6 +59,47 @@ func (p *Parser) parseStartline() (string, error) {
 	}
 
 	return startLine, nil
+}
+
+func (p *Parser) parseUrl(startLine string) string {
+	url := strings.Split(startLine, " ")[1]
+
+	i := strings.Index(url, "?")
+	if i == -1 { // NO query params present
+		return url
+	}
+
+	separatedUrl := strings.Split(url, "?")
+	return separatedUrl[0]
+}
+
+func (p *Parser) parseParams(startLine string) map[string]string {
+	params := make(map[string]string)
+	url := strings.Split(startLine, " ")[1]
+
+	i := strings.Index(url, "?")
+	if i == -1 { // NO query params present
+		return params
+	}
+
+	// ? value=1&another-val=23 ?
+	query := strings.Split(url, "?")
+	if query[len(query)-1] == "?" { // If last letter is ?, there is no params in the URL => google.com?
+		return params
+	}
+
+	pr := strings.Split(query[len(query)-1], "&")
+	for _, entry := range pr {
+		parts := strings.Split(entry, "=")
+		if len(parts) != 2 {
+			fmt.Printf("failed decoding parameter on input: %s", entry)
+			continue
+		}
+		key, value := parts[0], parts[1]
+		params[key] = value
+	}
+
+	return params
 }
 
 func (p *Parser) parseHeaders() ([]string, error) {

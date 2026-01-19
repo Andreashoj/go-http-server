@@ -11,9 +11,21 @@ import (
 func main() {
 	r := router.NewRouter()
 
-	r.Post("test", func(w router.HTTPWriter) {
+	r.Post("/url", func(w router.HTTPWriter, r router.HTTPRequest) {
+		payload := r.Body()
+		fmt.Println("payload", payload)
+
+		param, err := r.GetQueryParam("tester")
+		if err != nil {
+			fmt.Printf("no query param with that name: %s", err)
+		}
+		fmt.Println(param)
+
 		w.Header().Add(router.ContentLength, "10")
+
+		// Fix \n
 		w.Respond("epic post handler yo\n", 200)
+
 		// Use own custom writer, that write will be used to format the request
 	})
 
@@ -23,7 +35,7 @@ func main() {
 	}
 
 	// Makes requests to HTTP server with different kinds of http methods and bodies
-	tests.CreateRequests(tests.Post)
+	tests.CreateRequests(router.Post)
 
 	select {}
 }

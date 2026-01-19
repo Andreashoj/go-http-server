@@ -4,18 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+
+	router "github.com/Andreashoj/go-http-server/internal/router"
 )
 
-type Request string
-
-const (
-	Post   Request = "POST"
-	Get    Request = "GET"
-	Put    Request = "PUT"
-	Delete Request = "DELETE"
-)
-
-func CreateRequests(methods ...Request) {
+func CreateRequests(methods ...router.Request) {
 	conn, err := net.Dial("tcp", "localhost:8080")
 	defer conn.Close()
 	if err != nil {
@@ -25,16 +18,16 @@ func CreateRequests(methods ...Request) {
 
 	for _, method := range methods {
 		switch method {
-		case Post:
+		case router.Post:
 			createPostRequest(conn)
 			break
-		case Get:
+		case router.Get:
 			createGetRequest(conn)
 			break
-		case Put:
+		case router.Put:
 			createPutRequest(conn)
 			break
-		case Delete:
+		case router.Delete:
 			createDeleteRequest(conn)
 			break
 		}
@@ -43,7 +36,7 @@ func CreateRequests(methods ...Request) {
 
 func createPostRequest(conn net.Conn) {
 	body := `{"name":"John"}`
-	fmt.Fprintf(conn, "POST / HTTP/1.1\r\n"+
+	fmt.Fprintf(conn, "POST /url?tester=123 HTTP/1.1\r\n"+
 		"Host: example.com\r\n"+
 		"Connection: close\r\n"+
 		"Content-Length:%d\r\n\r\n"+
@@ -56,7 +49,7 @@ func createPostRequest(conn net.Conn) {
 	if err != nil {
 		fmt.Printf("failed reading response from HTTP server: %s\n", err)
 	}
-	fmt.Println(status)
+	fmt.Println("here", status)
 }
 
 func createGetRequest(conn net.Conn) {

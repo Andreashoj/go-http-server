@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Andreashoj/go-http-server/internal/parser"
 	"github.com/Andreashoj/go-http-server/internal/router"
 )
 
@@ -24,7 +23,7 @@ func StartServer(port string, r router.Router) error {
 
 			go func() {
 				defer cn.Close()
-				parser := parser.Listen(cn)
+				parser := router.Listen(cn)
 				request, err := parser.Parse()
 				if err != nil {
 					fmt.Printf("failed parsing http request: %s", err)
@@ -32,10 +31,13 @@ func StartServer(port string, r router.Router) error {
 				}
 
 				route := r.FindMatchingRoute(request)
+				if route == nil {
+					return
+				}
 
 				// Writer
-				writer := router.NewWriter(cn, route)
-				route.Handler(writer)
+				writer := router.NewHTTPWriter(cn, route)
+				route.Handler(writer, request)
 			}()
 		}
 	}()
