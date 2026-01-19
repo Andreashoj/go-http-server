@@ -11,6 +11,12 @@ import (
 func main() {
 	r := router.NewRouter()
 
+	r.Get("/url/:id", func(writer router.HTTPWriter, request router.HTTPRequest) {
+		// Retrieve id from query param ?
+		fmt.Println("hereeee")
+		writer.Respond("HERE YOU GO", 200)
+	})
+
 	r.Post("/url", func(w router.HTTPWriter, r router.HTTPRequest) {
 		payload := r.Body()
 		fmt.Println("payload", payload)
@@ -21,10 +27,7 @@ func main() {
 		}
 		fmt.Println(param)
 
-		// Fix \n
 		w.Respond("epicposthasd fasdf asdf asd", 200)
-
-		// Use own custom writer, that write will be used to format the request
 	})
 
 	if err := server.StartServer(":8080", r); err != nil {

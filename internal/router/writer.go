@@ -36,7 +36,7 @@ func (h *httpWriter) Respond(payload string, statusCode int) {
 
 	// Headers
 	if h.method == Post {
-		response.WriteString(fmt.Sprintf("%s: %v", ContentLength, len(payload)))
+		response.WriteString(fmt.Sprintf("%s: %v\r\n", ContentLength, len(payload)))
 	}
 
 	for _, header := range h.headers {
@@ -46,14 +46,10 @@ func (h *httpWriter) Respond(payload string, statusCode int) {
 	}
 
 	// Required empty line between body headers
-	response.WriteString("\r\n\r\n")
+	response.WriteString("\r\n")
 	response.WriteString(payload)
 
-	// These should be configurable through the router object
-	// And also a writer.Header .. Should add to it
-
 	// Body
-	fmt.Println("format:\n", response.String())
 	fmt.Fprint(h.conn, response.String())
 }
 

@@ -1,7 +1,10 @@
 package router
 
 type Router interface {
+	Get(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Post(url string, handler func(writer HTTPWriter, request HTTPRequest))
+	Put(url string, handler func(writer HTTPWriter, request HTTPRequest))
+	Delete(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	FindMatchingRoute(request HTTPRequest) *route
 	add(route)
 }
@@ -14,7 +17,7 @@ type route struct {
 }
 
 type router struct {
-	routes []route
+	routes []route // make this into a map that is easier to use for mapping
 }
 
 func NewRouter() Router {
@@ -35,11 +38,41 @@ func (r *router) FindMatchingRoute(request HTTPRequest) *route {
 	return nil
 }
 
+func (r *router) Delete(url string, handler func(writer HTTPWriter, request HTTPRequest)) {
+	newRoute := route{
+		Url:     url,
+		Handler: handler,
+		Method:  Delete,
+	}
+
+	r.add(newRoute)
+}
+
+func (r *router) Put(url string, handler func(writer HTTPWriter, request HTTPRequest)) {
+	newRoute := route{
+		Url:     url,
+		Handler: handler,
+		Method:  Put,
+	}
+
+	r.add(newRoute)
+}
+
 func (r *router) Post(url string, handler func(writer HTTPWriter, request HTTPRequest)) {
 	newRoute := route{
 		Url:     url,
 		Handler: handler,
 		Method:  Post,
+	}
+
+	r.add(newRoute)
+}
+
+func (r *router) Get(url string, handler func(writer HTTPWriter, request HTTPRequest)) {
+	newRoute := route{
+		Url:     url,
+		Handler: handler,
+		Method:  Get,
 	}
 
 	r.add(newRoute)
