@@ -2,7 +2,9 @@ package router
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
@@ -28,11 +30,6 @@ func Parse(reader *bufio.Reader) (HTTPRequest, error) {
 
 	request.headers = headers
 	contentLength := getContentLength(headers)
-
-	// No body, return early
-	if contentLength == 0 {
-		return &request, nil
-	}
 
 	body, err := parseBody(reader, contentLength)
 	if err != nil {
@@ -118,8 +115,8 @@ func parseHeaders(reader *bufio.Reader) ([]string, error) {
 }
 
 func getContentLength(headers []string) int {
-	for _, header := range headers {
-		h := strings.Split(header, ":")
+	for _, hder := range headers {
+		h := strings.Split(hder, ":")
 		if h[0] == "Content-Length" {
 			length, err := strconv.Atoi(strings.TrimSpace(h[1]))
 			if err != nil {
@@ -136,9 +133,10 @@ func getContentLength(headers []string) int {
 
 func parseBody(reader *bufio.Reader, contentLength int) (string, error) {
 	body := make([]byte, contentLength)
-	_, err := reader.Read(body)
-	if err != nil {
+	n, err := io.ReadFull(reader, body)
+	if errors.Is(err, io.ErrUnexpectedEOF) {
 		return "", err
 	}
-	return string(body), nil
+
+	return string(body[:n]), nil
 }
