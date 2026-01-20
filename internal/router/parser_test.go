@@ -25,6 +25,24 @@ func TestParse_Startline(t *testing.T) {
 	}
 }
 
+func TestParse_StartlineShouldFail(t *testing.T) {
+	requests := []string{
+		"GET / HTTP/1.1\r\n",
+		"POST / HTTP/1.1r\n\r\n",
+		"DELETE HTTP/1.1\r\n\r\n",
+		"/ HTTP/1.1\r\n\r\n",
+	}
+
+	for _, req := range requests {
+		reader := bufio.NewReader(strings.NewReader(req))
+		_, err := Parse(reader)
+
+		if err == nil {
+			t.Errorf("expected parser to fail: %s", err)
+		}
+	}
+}
+
 func TestParse_Headers(t *testing.T) {
 	requests := []string{
 		"GET / HTTP/1.1\r\nContent-Length: 10\r\nContent-Type: json/application\r\nAccess-Control-Allow-Origin: http://example.com\r\n\r\n",
@@ -43,6 +61,30 @@ func TestParse_Headers(t *testing.T) {
 
 		if err != nil {
 			t.Errorf("failed parsing request: %s", err)
+		}
+	}
+}
+
+func TestParse_HeadersInvalid(t *testing.T) {
+	requests := []string{
+		"GET / \r\nHost: example.com\r\n\r\n",
+		"GET / HTTP/2.5\r\nHost: example.com\r\n\r\n",
+		"/ HTTP/1.1\r\nHost: example.com\r\n\r\n",
+		"INVALID / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+		"GET HTTP/1.1\r\nHost: example.com\r\n\r\n",
+		"POST /api/data HTTP/1.1\r\nHost: example.com\r\nContent-Length: 50\r\n\r\n",
+		"POST /api/data HTTP/1.1\r\nHost: example.com\r\nContent-Length: -10\r\n\r\n",
+		"POST /api/data HTTP/1.1\r\nHost: example.com\r\nContent-Length: abc\r\n\r\n",
+		"GET / HTTP/1.1\r\nUser-Agent: test\r\n\r\n",
+		"GET / HTTP/1.1\r\nHost example.com\r\n\r\n",
+	}
+
+	for _, req := range requests {
+		reader := bufio.NewReader(strings.NewReader(req))
+		_, err := Parse(reader)
+
+		if err == nil {
+			t.Errorf("expected to fail with invalid headers: %s", err)
 		}
 	}
 }

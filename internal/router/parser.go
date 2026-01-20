@@ -29,14 +29,15 @@ func Parse(reader *bufio.Reader) (HTTPRequest, error) {
 	}
 
 	request.headers = headers
-	contentLength := getContentLength(headers)
+	contentLength, err := getContentLength(headers)
+	if err != nil {
+		return nil, fmt.Errorf("content length is specified but failed retrieving it: %s", err)
+	}
 
 	body, err := parseBody(reader, contentLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing body: %s", err)
 	}
-
-	fmt.Println("here")
 
 	request.body = body
 	return &request, nil
@@ -46,6 +47,10 @@ func parseStartline(reader *bufio.Reader) (string, error) {
 	startLine, err := reader.ReadString('\n')
 	if err != nil {
 		return "", err
+	}
+
+	if len(startLine) != 3 {
+		return "", fmt.Errorf("expected startline to have method, url and http version. One or more is missing: %s", startLine)
 	}
 
 	return startLine, nil
@@ -114,21 +119,24 @@ func parseHeaders(reader *bufio.Reader) ([]string, error) {
 	return headers, nil
 }
 
-func getContentLength(headers []string) int {
+func getContentLength(headers []string) (int, error) {
 	for _, hder := range headers {
 		h := strings.Split(hder, ":")
 		if h[0] == "Content-Length" {
 			length, err := strconv.Atoi(strings.TrimSpace(h[1]))
 			if err != nil {
-				fmt.Printf("failed retrieving content length from header: %s", err)
-				return 0
+				return 0, fmt.Errorf("failed retrieving content length from header: %s", err)
 			}
 
-			return length
+			if length < 0 {
+				return 0, fmt.Errorf("content length cannot be negative")
+			}
+
+			return length, nil
 		}
 	}
 
-	return 0
+	return 0, nil
 }
 
 func parseBody(reader *bufio.Reader, contentLength int) (string, error) {
