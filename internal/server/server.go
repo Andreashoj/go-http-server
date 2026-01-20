@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"strings"
@@ -23,11 +24,12 @@ func StartServer(port string, r router.Router) error {
 			}
 
 			go func() {
-				defer cn.Close()
-				parser := router.Listen(cn)
-				request, err := parser.Parse()
+				defer cn.Close() // Should be disabled if http keep-alive is set
+				reader := bufio.NewReader(cn)
+				request, err := router.Parse(reader)
 				if err != nil {
 					if strings.Contains(err.Error(), "EOF") { // handles empty requests
+						fmt.Println("empty request")
 						return
 					}
 

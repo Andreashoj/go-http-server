@@ -8,6 +8,14 @@ import (
 	"github.com/Andreashoj/go-http-server/internal/tests"
 )
 
+// TODO:
+// Write tests for Parser
+// FEATURES:
+// Retrieve ID from URL
+// Route grouping
+// Middlewares
+// Router config - allowed headers that is attached to all responses
+
 func main() {
 	r := router.NewRouter()
 

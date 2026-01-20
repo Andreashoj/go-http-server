@@ -3,71 +3,62 @@ package router
 import (
 	"bufio"
 	"fmt"
-	"net"
 	"strconv"
 	"strings"
 )
 
-type Parser struct {
-	conn   net.Conn
-	reader *bufio.Reader
-}
-
-func Listen(conn net.Conn) *Parser {
-	return &Parser{
-		conn:   conn,
-		reader: bufio.NewReader(conn),
-	}
-}
-
-func (p *Parser) Parse() (HTTPRequest, error) {
+func Parse(reader *bufio.Reader) (HTTPRequest, error) {
 	var request httpRequest
-	startLine, err := p.parseStartline()
 
+	startLine, err := parseStartline(reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed parsing startline: %s", err)
+		fmt.Println("here", err)
+		return &request, fmt.Errorf("failed parsing startline: %s", err)
 	}
-	request.startLine = startLine
-	request.url = p.parseUrl(startLine)
-	request.params = p.parseParams(startLine)
-	request.method = p.parseMethod(startLine)
 
-	headers, err := p.parseHeaders()
+	request.startLine = startLine
+	request.url = parseUrl(startLine)
+	request.params = parseParams(startLine)
+	request.method = parseMethod(startLine)
+
+	headers, err := parseHeaders(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing headers: %s", err)
 	}
 
 	request.headers = headers
-	contentLength := p.getContentLength(headers)
+	contentLength := getContentLength(headers)
 
 	// No body, return early
 	if contentLength == 0 {
 		return &request, nil
 	}
 
-	body, err := p.parseBody(contentLength)
+	body, err := parseBody(reader, contentLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing body: %s", err)
 	}
+
+	fmt.Println("here")
 
 	request.body = body
 	return &request, nil
 }
 
-func (p *Parser) parseStartline() (string, error) {
-	startLine, err := p.reader.ReadString('\n')
+func parseStartline(reader *bufio.Reader) (string, error) {
+	startLine, err := reader.ReadString('\n')
 	if err != nil {
-		return "", fmt.Errorf("failed decoding starting, err: %s", err)
+		return "", err
 	}
 
 	return startLine, nil
 }
 
-func (p *Parser) parseMethod(startLine string) Request {
+func parseMethod(startLine string) Request {
 	return Request(strings.Split(startLine, " ")[0])
 }
 
-func (p *Parser) parseUrl(startLine string) string {
+func parseUrl(startLine string) string {
 	url := strings.Split(startLine, " ")[1]
 
 	i := strings.Index(url, "?")
@@ -79,7 +70,7 @@ func (p *Parser) parseUrl(startLine string) string {
 	return separatedUrl[0]
 }
 
-func (p *Parser) parseParams(startLine string) map[string]string {
+func parseParams(startLine string) map[string]string {
 	params := make(map[string]string)
 	url := strings.Split(startLine, " ")[1]
 
@@ -88,7 +79,6 @@ func (p *Parser) parseParams(startLine string) map[string]string {
 		return params
 	}
 
-	// ? value=1&another-val=23 ?
 	query := strings.Split(url, "?")
 	if query[len(query)-1] == "?" { // If last letter is ?, there is no params in the URL => google.com?
 		return params
@@ -108,10 +98,10 @@ func (p *Parser) parseParams(startLine string) map[string]string {
 	return params
 }
 
-func (p *Parser) parseHeaders() ([]string, error) {
+func parseHeaders(reader *bufio.Reader) ([]string, error) {
 	var headers []string
 	for {
-		line, err := p.reader.ReadString('\n')
+		line, err := reader.ReadString('\n')
 		if err != nil {
 			return nil, fmt.Errorf("failed decoding header, err: %s", err)
 		}
@@ -127,7 +117,7 @@ func (p *Parser) parseHeaders() ([]string, error) {
 	return headers, nil
 }
 
-func (p *Parser) getContentLength(headers []string) int {
+func getContentLength(headers []string) int {
 	for _, header := range headers {
 		h := strings.Split(header, ":")
 		if h[0] == "Content-Length" {
@@ -144,9 +134,9 @@ func (p *Parser) getContentLength(headers []string) int {
 	return 0
 }
 
-func (p *Parser) parseBody(contentLength int) (string, error) {
+func parseBody(reader *bufio.Reader, contentLength int) (string, error) {
 	body := make([]byte, contentLength)
-	_, err := p.reader.Read(body)
+	_, err := reader.Read(body)
 	if err != nil {
 		return "", err
 	}
