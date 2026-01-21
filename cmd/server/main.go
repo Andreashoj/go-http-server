@@ -12,12 +12,11 @@ import (
 // Write tests for Parser [X]
 // FEATURES: [X]
 // Retrieve ID from URL [X]
-// Test get query param & get url param
+// Test get query param & get url param [X]
 // Route grouping
 // Middlewares
 // Router config - allowed headers that is attached to all responses
-// Create tests for the above if needed
-// That concludes this project
+// Create test for writer
 
 func main() {
 	r := router.NewRouter()
