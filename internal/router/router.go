@@ -1,5 +1,10 @@
 package router
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Router interface {
 	Get(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Post(url string, handler func(writer HTTPWriter, request HTTPRequest))
@@ -30,7 +35,29 @@ func (r *router) add(route route) {
 
 func (r *router) FindMatchingRoute(request HTTPRequest) *route {
 	for _, routeEntry := range r.routes {
-		if routeEntry.Method == request.Method() && routeEntry.Url == request.Url() {
+		if routeEntry.Method != request.Method() {
+			continue
+		}
+
+		requestUrl := strings.Split(strings.TrimPrefix(request.Url(), "/"), "/") // Split route and request url and also removing leading / to avoid getting an empty entry in the slice
+		routeUrl := strings.Split(strings.TrimPrefix(routeEntry.Url, "/"), "/")
+		matches := true
+		if len(requestUrl) != len(routeUrl) { // no need to check if route matches if their length isn't the same
+			continue
+		}
+
+		for i, entry := range routeUrl {
+			if string(entry[0]) == ":" { // dynamic route check ":id", any existent value from the request is accepted
+				continue
+			}
+
+			if requestUrl[i] != entry { // not a dynamic route and the route param doesn't match
+				matches = false
+				break
+			}
+		}
+
+		if matches {
 			return &routeEntry
 		}
 	}
@@ -69,6 +96,7 @@ func (r *router) Post(url string, handler func(writer HTTPWriter, request HTTPRe
 }
 
 func (r *router) Get(url string, handler func(writer HTTPWriter, request HTTPRequest)) {
+	fmt.Println("url", url)
 	newRoute := route{
 		Url:     url,
 		Handler: handler,

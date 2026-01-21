@@ -74,7 +74,7 @@ func parseUrl(startLine string) string {
 		return url
 	}
 
-	separatedUrl := strings.Split(url, "?")
+	separatedUrl := strings.Split(url, "?") // Maybe need to also check for # ?
 	return separatedUrl[0]
 }
 
