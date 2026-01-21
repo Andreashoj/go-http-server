@@ -12,6 +12,7 @@ import (
 // Write tests for Parser [X]
 // FEATURES: [X]
 // Retrieve ID from URL [X]
+// Test get query param & get url param
 // Route grouping
 // Middlewares
 // Router config - allowed headers that is attached to all responses
@@ -23,16 +24,10 @@ func main() {
 
 	r.Get("/url/:id", func(writer router.HTTPWriter, request router.HTTPRequest) {
 		// Retrieve id from query param ?
-		urlParam, _ := request.GetURLParam("ids")
+		urlParam, _ := request.GetURLParam("id")
 		fmt.Println("param", urlParam)
 
-		writer.Respond("HERE YOU GO", 200)
-
-		// So what do we need to do about the ID
-		// It's a dynamic check on the router mapping right
-		// Lets start by making the router able to retrieve the routes as a map
-		// When that's done, i need to extend the route mapper so it's ignored ids
-		// I also need to create a get url param => request.urlParam()
+		writer.Respond(fmt.Sprintf("HERE YOU GO: %s", urlParam), 200)
 	})
 
 	r.Post("/url", func(w router.HTTPWriter, r router.HTTPRequest) {
