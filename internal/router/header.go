@@ -4,6 +4,7 @@ type HeaderType string
 
 const (
 	ContentLength HeaderType = "Content-Length"
+	Host          HeaderType = "Host"
 )
 
 type Header interface {

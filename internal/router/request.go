@@ -5,10 +5,13 @@ import "fmt"
 type Request string
 
 const (
-	Post   Request = "POST"
-	Get    Request = "GET"
-	Put    Request = "PUT"
-	Delete Request = "DELETE"
+	Post    Request = "POST"
+	Get     Request = "GET"
+	Put     Request = "PUT"
+	Delete  Request = "DELETE"
+	Patch   Request = "PATCH"
+	Head    Request = "HEAD"
+	Options Request = "OPTIONS"
 )
 
 type HTTPRequest interface {

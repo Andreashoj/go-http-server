@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -12,28 +13,33 @@ import (
 func Parse(reader *bufio.Reader) (HTTPRequest, error) {
 	var request httpRequest
 
+	// Handle startline
 	startLine, err := parseStartline(reader)
 	if err != nil {
-		fmt.Println("here", err)
 		return &request, fmt.Errorf("failed parsing startline: %s", err)
 	}
 
 	request.startLine = startLine
-	request.url = parseUrl(startLine)
-	request.params = parseParams(startLine)
 	request.method = parseMethod(startLine)
+	request.url = parseUrl(startLine)
+	params, err := parseParams(startLine)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing params: %s", err)
+	}
+	request.params = params
 
+	// Handle headers
 	headers, err := parseHeaders(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing headers: %s", err)
 	}
-
 	request.headers = headers
 	contentLength, err := getContentLength(headers)
 	if err != nil {
 		return nil, fmt.Errorf("content length is specified but failed retrieving it: %s", err)
 	}
 
+	// Handle body
 	body, err := parseBody(reader, contentLength)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing body: %s", err)
@@ -49,7 +55,7 @@ func parseStartline(reader *bufio.Reader) (string, error) {
 		return "", err
 	}
 
-	if len(startLine) != 3 {
+	if len(strings.Split(startLine, " ")) != 3 {
 		return "", fmt.Errorf("expected startline to have method, url and http version. One or more is missing: %s", startLine)
 	}
 
@@ -72,18 +78,18 @@ func parseUrl(startLine string) string {
 	return separatedUrl[0]
 }
 
-func parseParams(startLine string) map[string]string {
+func parseParams(startLine string) (map[string]string, error) {
 	params := make(map[string]string)
-	url := strings.Split(startLine, " ")[1]
+	endpoint := strings.Split(startLine, " ")[1]
 
-	i := strings.Index(url, "?")
+	i := strings.Index(endpoint, "?")
 	if i == -1 { // NO query params present
-		return params
+		return params, nil
 	}
 
-	query := strings.Split(url, "?")
+	query := strings.Split(endpoint, "?")
 	if query[len(query)-1] == "?" { // If last letter is ?, there is no params in the URL => google.com?
-		return params
+		return params, nil
 	}
 
 	pr := strings.Split(query[len(query)-1], "&")
@@ -94,14 +100,20 @@ func parseParams(startLine string) map[string]string {
 			continue
 		}
 		key, value := parts[0], parts[1]
-		params[key] = value
+		decoded, err := url.QueryUnescape(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed decoding parameter value for key: %s with value: %s and error: %s", key, value, err)
+		}
+
+		params[key] = decoded
 	}
 
-	return params
+	return params, nil
 }
 
 func parseHeaders(reader *bufio.Reader) ([]string, error) {
 	var headers []string
+	var hasHost bool
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
@@ -113,7 +125,33 @@ func parseHeaders(reader *bufio.Reader) ([]string, error) {
 			break
 		}
 
+		// Validate "value: key" format
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("malformed header format")
+		}
+
+		headerKey := strings.TrimSpace(strings.ToLower(string(parts[0])))
+		headerValue := strings.TrimSpace(strings.ToLower(string(parts[1])))
+
+		// Validate host exists
+		if headerKey == "host" && headerValue != "" {
+			hasHost = true
+		}
+
+		// Validate content length value
+		if headerKey == "content-length" {
+			length, err := strconv.Atoi(headerValue)
+			if err != nil || length < 0 {
+				return nil, fmt.Errorf("invalid content length value: %s", err)
+			}
+		}
+
 		headers = append(headers, line)
+	}
+
+	if !hasHost {
+		return nil, fmt.Errorf("failed because no host header was present")
 	}
 
 	return headers, nil
@@ -123,15 +161,7 @@ func getContentLength(headers []string) (int, error) {
 	for _, hder := range headers {
 		h := strings.Split(hder, ":")
 		if h[0] == "Content-Length" {
-			length, err := strconv.Atoi(strings.TrimSpace(h[1]))
-			if err != nil {
-				return 0, fmt.Errorf("failed retrieving content length from header: %s", err)
-			}
-
-			if length < 0 {
-				return 0, fmt.Errorf("content length cannot be negative")
-			}
-
+			length, _ := strconv.Atoi(strings.TrimSpace(h[1])) // validation of content length handled in header parser
 			return length, nil
 		}
 	}
