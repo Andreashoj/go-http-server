@@ -8,10 +8,10 @@ import (
 
 func TestParse_Startline(t *testing.T) {
 	requests := []string{
-		"GET / HTTP/1.1\r\n\r\n",
-		"POST / HTTP/1.1\r\n\r\n",
-		"DELETE / HTTP/1.1\r\n\r\n",
-		"PUT / HTTP/1.1\r\n\r\n",
+		"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+		"POST / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+		"DELETE / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+		"PUT / HTTP/1.1\r\nHost: example.com\r\n\r\n",
 	}
 
 	for _, req := range requests {
@@ -84,6 +84,7 @@ func TestParse_Headers(t *testing.T) {
 	})
 }
 
+// Add edge case for empty params
 func TestParse_Params(t *testing.T) {
 	requests := []struct {
 		url   string
@@ -142,7 +143,7 @@ func TestParse_GetMethod(t *testing.T) {
 		expectedMethod Request
 	}{
 		{
-			request:        "GET / HTTP/1.1\r\nContent-Length: 10\r\nContent-Type: json/application\r\nAccess-Control-Allow-Origin: http://example.com\r\n\r\n",
+			request:        "GET / HTTP/1.1\r\nHost: api.example.com\r\nContent-Length: 10\r\nContent-Type: json/application\r\nAccess-Control-Allow-Origin: http://example.com\r\n\r\n",
 			expectedMethod: Get,
 		},
 		{
@@ -185,6 +186,87 @@ func TestParse_GetMethod(t *testing.T) {
 
 		if httpReq.Method() != tt.expectedMethod {
 			t.Errorf("failed, expected %s to equal %s", httpReq.Method(), tt.expectedMethod)
+		}
+	}
+}
+
+func TestParse_ContentLength(t *testing.T) {
+	requests := []struct {
+		request               string
+		expectedContentLength int
+	}{
+		{
+			request:               "OPTIONS /api/data HTTP/1.1\r\nHost: example.com\r\nAccess-Control-Request-Method: POST\r\nAccess-Control-Request-Headers: Content-Type\r\n\r\n",
+			expectedContentLength: 0,
+		},
+		{
+			request:               "POST /api/users HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\nContent-Length: 24\r\n\r\n{\"name\":\"John\",\"age\":30}",
+			expectedContentLength: 24,
+		}, {
+			request:               "POST /api/data HTTP/1.1\r\nHost: example.com\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello World",
+			expectedContentLength: 11,
+		},
+		{
+			request:               "PUT /api/config HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\nContent-Length: 32\r\n\r\n{\"setting\":\"value\",\"enabled\":true}",
+			expectedContentLength: 32,
+		},
+		{
+			request:               "PATCH /api/item HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\nContent-Length: 18\r\n\r\n{\"status\":\"active\"}",
+			expectedContentLength: 18,
+		},
+	}
+
+	for _, tt := range requests {
+		reader := bufio.NewReader(strings.NewReader(tt.request))
+		httpReq, err := Parse(reader)
+
+		if err != nil {
+			t.Errorf("test failed: %s", err)
+		}
+
+		if len(httpReq.Body()) != tt.expectedContentLength {
+			t.Errorf("expected body length to be %v but got %v", tt.expectedContentLength, len(httpReq.Body()))
+		}
+	}
+}
+
+func TestParse_Body(t *testing.T) {
+	requests := []struct {
+		request string
+		body    string
+	}{
+		{
+			request: "PUT /api/config HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\nContent-Length: 34\r\n\r\n{\"setting\":\"value\",\"enabled\":true}",
+			body:    "{\"setting\":\"value\",\"enabled\":true}",
+		},
+		{
+			request: "POST /api/users HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\nContent-Length: 24\r\n\r\n{\"name\":\"John\",\"age\":30}",
+			body:    "{\"name\":\"John\",\"age\":30}",
+		},
+		{
+			request: "POST /api/data HTTP/1.1\r\nHost: example.com\r\nContent-Type: text/plain\r\nContent-Length: 11\r\n\r\nHello World",
+			body:    "Hello World",
+		},
+		{
+			request: "PATCH /api/item HTTP/1.1\r\nHost: example.com\r\nContent-Type: application/json\r\nContent-Length: 19\r\n\r\n{\"status\":\"active\"}",
+			body:    "{\"status\":\"active\"}",
+		},
+		{
+			request: "POST /api/message HTTP/1.1\r\nHost: example.com\r\nContent-Type: text/plain\r\nContent-Length: 13\r\n\r\nTest message!",
+			body:    "Test message!",
+		},
+	}
+
+	for _, tt := range requests {
+		reader := bufio.NewReader(strings.NewReader(tt.request))
+		httpReq, err := Parse(reader)
+
+		if err != nil {
+			t.Errorf("test failed: %s", err)
+		}
+
+		if httpReq.Body() != tt.body {
+			t.Errorf("expected body to equal %s but got %s", tt.body, httpReq.Body())
 		}
 	}
 }
