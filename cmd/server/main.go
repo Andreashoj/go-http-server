@@ -13,6 +13,7 @@ import (
 // FEATURES: [X]
 // Retrieve ID from URL [X]
 // Test get query param & get url param [X]
+// Router route tests [X]
 // Route grouping
 // Middlewares
 // Router config - allowed headers that is attached to all responses
@@ -20,6 +21,15 @@ import (
 
 func main() {
 	r := router.NewRouter()
+
+	// wrap routes in group
+	//r.Group("/user", func(u router.Router) {
+	//	// create new router within group
+	//	// this router should be a copy of the original router
+	//	// need to make sure it doesn't get too complicated with the routes, by having multiple routers
+	//	// The main thought behind having multiple routers is that you should be able to create headers, middlewares specifically for that group
+	//
+	//})
 
 	r.Get("/url/:id", func(writer router.HTTPWriter, request router.HTTPRequest) {
 		// Retrieve id from query param ?

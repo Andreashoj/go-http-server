@@ -133,3 +133,83 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 
 	}
 }
+
+func Test_router_AddRoutes(t *testing.T) {
+	t.Run("valid routes", func(t *testing.T) {
+		r := NewRouter()
+		routes := []route{
+			{
+				Url:     "/users",
+				Method:  Post,
+				Handler: nil,
+				Request: nil,
+			},
+			{
+				Url:     "/users/:id",
+				Method:  Put,
+				Handler: nil,
+				Request: nil,
+			},
+			{
+				Url:     "/users/:id/example/test",
+				Method:  Get,
+				Handler: nil,
+				Request: nil,
+			},
+		}
+
+		for _, tt := range routes {
+			assertNoPanic(t, func() {
+				r.add(tt)
+			})
+		}
+	})
+
+	t.Run("invalid routes", func(t *testing.T) {
+		r := NewRouter()
+		routes := []route{
+			{
+				Url:     "/users/",
+				Method:  Post,
+				Handler: nil,
+				Request: nil,
+			},
+			{
+				Url:     "",
+				Method:  Put,
+				Handler: nil,
+				Request: nil,
+			},
+			{
+				Url:     "users/:id/example/test",
+				Method:  Get,
+				Handler: nil,
+				Request: nil,
+			},
+		}
+
+		for _, tt := range routes {
+			assertPanic(t, func() {
+				r.add(tt)
+			})
+		}
+	})
+}
+
+func assertPanic(t *testing.T, f func()) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	f()
+}
+
+func assertNoPanic(t *testing.T, f func()) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("The code panicked")
+		}
+	}()
+	f()
+}

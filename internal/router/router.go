@@ -11,6 +11,7 @@ type Router interface {
 	Put(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Delete(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	FindMatchingRoute(request HTTPRequest) *route
+	//Group(url string, router func(router Router))
 	add(route)
 }
 
@@ -30,6 +31,18 @@ func NewRouter() Router {
 }
 
 func (r *router) add(route route) {
+	if len(route.Url) == 0 {
+		panic(fmt.Sprintf("route must not be an empty string"))
+	}
+
+	if string(route.Url[len(route.Url)-1]) == "/" {
+		panic(fmt.Sprintf("failed adding route, due to trailing slash"))
+	}
+
+	if string(route.Url[0]) != "/" {
+		panic(fmt.Sprintf("failed adding route, should start with a /"))
+	}
+
 	r.routes = append(r.routes, route)
 }
 
