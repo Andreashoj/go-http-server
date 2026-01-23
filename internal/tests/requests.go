@@ -36,7 +36,7 @@ func CreateRequests(methods ...router.Request) {
 
 func createPostRequest(conn net.Conn) {
 	body := `{"name":"John"}`
-	fmt.Fprintf(conn, "POST /url?tester=123 HTTP/1.1\r\n"+
+	fmt.Fprintf(conn, "POST /user/my-other-route HTTP/1.1\r\n"+
 		"Host: example.com\r\n"+
 		"Connection: close\r\n"+
 		"Content-Length:%d\r\n\r\n"+

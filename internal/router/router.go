@@ -11,23 +11,41 @@ type Router interface {
 	Put(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Delete(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	FindMatchingRoute(request HTTPRequest) *route
-	//Group(url string, router func(router Router))
+	Group(url string, router func(router Router))
 	add(route)
 }
 
 type route struct {
 	Url     string
-	Method  Request // move away from tests package
+	Method  Request
 	Handler func(writer HTTPWriter, request HTTPRequest)
 	Request HTTPRequest
+	Group   []router
 }
 
 type router struct {
-	routes []route // make this into a map that is easier to use for mapping
+	routes      []route
+	currentNode *node
+}
+
+type node struct {
+	parent   *node
+	children []node
+	path     string
+	route    *route
+
+	// configs
+	middlewares any
+	headers     any
 }
 
 func NewRouter() Router {
-	return &router{}
+	nde := node{
+		path: "/", // Initial route
+	}
+	return &router{
+		currentNode: &nde,
+	}
 }
 
 func (r *router) add(route route) {
@@ -36,46 +54,73 @@ func (r *router) add(route route) {
 	}
 
 	if string(route.Url[len(route.Url)-1]) == "/" {
-		panic(fmt.Sprintf("failed adding route, due to trailing slash"))
+		panic(fmt.Sprintf("failed adding route, shouldn't end with a /"))
 	}
 
 	if string(route.Url[0]) != "/" {
 		panic(fmt.Sprintf("failed adding route, should start with a /"))
 	}
 
-	r.routes = append(r.routes, route)
+	nde := node{
+		parent: r.currentNode,
+		path:   route.Url,
+		route:  &route,
+	}
+
+	r.currentNode.children = append(r.currentNode.children, nde)
+	r.routes = append(r.routes, route) // This may not be needed
 }
 
-func (r *router) FindMatchingRoute(request HTTPRequest) *route {
-	for _, routeEntry := range r.routes {
-		if routeEntry.Method != request.Method() {
-			continue
+func findMatchingNode(requestUrl string, node *node) *node {
+	isRoot := node.path == "/"
+	if node.path == requestUrl {
+		return node
+	}
+
+	var requestUrlsParts []string
+	urlParts := strings.Split(requestUrl, "/")
+	for i, part := range urlParts {
+		if isRoot && i != 0 {
+			requestUrlsParts = append(requestUrlsParts, "/"+part)
+		} else if i != 0 && i != 1 { // removes current entry + leading /
+			requestUrlsParts = append(requestUrlsParts, "/"+part)
 		}
+	}
 
-		requestUrl := strings.Split(strings.TrimPrefix(request.Url(), "/"), "/") // Split route and request url and also removing leading / to avoid getting an empty entry in the slice
-		routeUrl := strings.Split(strings.TrimPrefix(routeEntry.Url, "/"), "/")
-		matches := true
-		if len(requestUrl) != len(routeUrl) { // no need to check if route matches if their length isn't the same
-			continue
-		}
-
-		for i, entry := range routeUrl {
-			if string(entry[0]) == ":" { // dynamic route check ":id", any existent value from the request is accepted
-				continue
-			}
-
-			if requestUrl[i] != entry { // not a dynamic route and the route param doesn't match
-				matches = false
-				break
-			}
-		}
-
-		if matches {
-			return &routeEntry
+	// Check again on current path
+	for _, child := range node.children {
+		if child.path == requestUrlsParts[0] {
+			return findMatchingNode(strings.Join(requestUrlsParts, ""), &child)
 		}
 	}
 
 	return nil
+}
+
+func (r *router) FindMatchingRoute(request HTTPRequest) *route {
+	n := findMatchingNode(request.Url(), r.currentNode)
+	return n.route
+}
+
+func (r *router) Group(url string, handler func(router Router)) {
+	var groupUrl = "/" + url
+	if r.currentNode.path == "/" {
+		groupUrl = url
+	}
+
+	nde := node{
+		parent:   r.currentNode,
+		path:     groupUrl,
+		children: []node{},
+	}
+
+	rter := router{
+		currentNode: &nde,
+	}
+
+	fmt.Println()
+	handler(&rter)
+	r.currentNode.children = append(r.currentNode.children, nde)
 }
 
 func (r *router) Delete(url string, handler func(writer HTTPWriter, request HTTPRequest)) {
