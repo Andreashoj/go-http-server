@@ -10,7 +10,7 @@ type Router interface {
 	Post(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Put(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Delete(url string, handler func(writer HTTPWriter, request HTTPRequest))
-	FindMatchingRoute(request HTTPRequest) *route
+	FindMatchingRoute(request HTTPRequest) (*route, error)
 	Group(url string, router func(router Router))
 	add(route)
 }
@@ -24,7 +24,6 @@ type route struct {
 }
 
 type router struct {
-	routes      []route
 	currentNode *node
 }
 
@@ -68,13 +67,46 @@ func (r *router) add(route route) {
 	}
 
 	r.currentNode.children = append(r.currentNode.children, nde)
-	r.routes = append(r.routes, route) // This may not be needed
 }
 
-func findMatchingNode(requestUrl string, node *node) *node {
-	isRoot := node.path == "/"
-	if node.path == requestUrl {
-		return node
+func compareRoutes(requestUrl, routerUrl string) bool {
+	requestUrlParts := strings.Split(requestUrl, "/")
+	routerUrlParts := strings.Split(routerUrl, "/")
+
+	if routerUrl == "/" {
+		routerUrlParts = []string{""}
+	}
+
+	if requestUrl == "/" {
+		requestUrlParts = []string{""}
+	}
+
+	if len(requestUrlParts) != len(routerUrlParts) {
+		return false
+	}
+
+	for i, part := range routerUrlParts {
+		if part == "" {
+			continue
+		}
+
+		isDynamic := string(part[0]) == ":"
+		if isDynamic {
+			continue
+		}
+
+		if part != requestUrlParts[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func findMatchingNode(requestUrl string, method Request, n *node) *node {
+	isRoot := n.path == "/"
+	if compareRoutes(requestUrl, n.path) && n.route.Method == method {
+		return n
 	}
 
 	var requestUrlsParts []string
@@ -88,18 +120,28 @@ func findMatchingNode(requestUrl string, node *node) *node {
 	}
 
 	// Check again on current path
-	for _, child := range node.children {
-		if child.path == requestUrlsParts[0] {
-			return findMatchingNode(strings.Join(requestUrlsParts, ""), &child)
+	var result *node
+	for _, child := range n.children {
+		if compareRoutes(requestUrl, child.path) && child.route.Method == method {
+			result = &child
+		} else if child.path == requestUrlsParts[0] {
+			result = findMatchingNode(strings.Join(requestUrlsParts, ""), method, &child)
+		}
+
+		if result != nil {
+			return result
 		}
 	}
 
 	return nil
 }
 
-func (r *router) FindMatchingRoute(request HTTPRequest) *route {
-	n := findMatchingNode(request.Url(), r.currentNode)
-	return n.route
+func (r *router) FindMatchingRoute(request HTTPRequest) (*route, error) {
+	n := findMatchingNode(request.Url(), request.Method(), r.currentNode)
+	if n == nil {
+		return nil, fmt.Errorf("could not find match for request URL: %s", request.Url())
+	}
+	return n.route, nil
 }
 
 func (r *router) Group(url string, handler func(router Router)) {

@@ -5,7 +5,7 @@ import (
 )
 
 func Test_router_FindMatchingRoute(t *testing.T) {
-	routerMock := router{}
+	routerMock := NewRouter()
 	routerMock.Get("/url", func(writer HTTPWriter, request HTTPRequest) {})
 	routerMock.Get("/url/:id", func(writer HTTPWriter, request HTTPRequest) {})
 	routerMock.Post("/users/example", func(writer HTTPWriter, request HTTPRequest) {})
@@ -13,25 +13,14 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 	routerMock.Get("/posts/:postId/comments/:commentId", func(writer HTTPWriter, request HTTPRequest) {})
 	routerMock.Delete("/items/:id", func(writer HTTPWriter, request HTTPRequest) {})
 
-	requests := []struct {
-		endpoint    httpRequest
+	tests := []struct {
+		name        string
+		request     httpRequest
 		expectedURL string
 	}{
 		{
-			expectedURL: "/url/:id",
-			endpoint: httpRequest{
-				startLine: "GET /url/123 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
-				body:      "",
-				params:    nil,
-				url:       "/url/123",
-				routerURL: "/url/:id",
-				method:    "GET",
-			},
-		},
-		{
-			expectedURL: "/url",
-			endpoint: httpRequest{
+			name: "exact match static route",
+			request: httpRequest{
 				startLine: "GET /url HTTP/1.1",
 				headers:   []string{"Host: example.com"},
 				body:      "",
@@ -40,10 +29,24 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 				routerURL: "/url",
 				method:    "GET",
 			},
+			expectedURL: "/url",
 		},
 		{
-			expectedURL: "/users/example",
-			endpoint: httpRequest{
+			name: "dynamic parameter match",
+			request: httpRequest{
+				startLine: "GET /url/123 HTTP/1.1",
+				headers:   []string{"Host: example.com"},
+				body:      "",
+				params:    nil,
+				url:       "/url/123",
+				routerURL: "/url/:id",
+				method:    "GET",
+			},
+			expectedURL: "/url/:id",
+		},
+		{
+			name: "static POST route",
+			request: httpRequest{
 				startLine: "POST /users/example HTTP/1.1",
 				headers:   []string{"Host: example.com", "Content-Type: application/json"},
 				body:      `{"name":"test"}`,
@@ -52,10 +55,11 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 				routerURL: "/users/example",
 				method:    "POST",
 			},
+			expectedURL: "/users/example",
 		},
 		{
-			expectedURL: "/user",
-			endpoint: httpRequest{
+			name: "static PUT route",
+			request: httpRequest{
 				startLine: "PUT /user HTTP/1.1",
 				headers:   []string{"Host: example.com"},
 				body:      "",
@@ -64,10 +68,11 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 				routerURL: "/user",
 				method:    "PUT",
 			},
+			expectedURL: "/user",
 		},
 		{
-			expectedURL: "/posts/:postId/comments/:commentId",
-			endpoint: httpRequest{
+			name: "multiple dynamic parameters",
+			request: httpRequest{
 				startLine: "GET /posts/42/comments/789 HTTP/1.1",
 				headers:   []string{"Host: example.com"},
 				body:      "",
@@ -76,10 +81,11 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 				routerURL: "/posts/:postId/comments/:commentId",
 				method:    "GET",
 			},
+			expectedURL: "/posts/:postId/comments/:commentId",
 		},
 		{
-			expectedURL: "/items/:id",
-			endpoint: httpRequest{
+			name: "DELETE route with dynamic parameter",
+			request: httpRequest{
 				startLine: "DELETE /items/999 HTTP/1.1",
 				headers:   []string{"Host: example.com"},
 				body:      "",
@@ -88,10 +94,11 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 				routerURL: "/items/:id",
 				method:    "DELETE",
 			},
+			expectedURL: "/items/:id",
 		},
 		{
-			expectedURL: "",
-			endpoint: httpRequest{
+			name: "nonexistent route returns nil",
+			request: httpRequest{
 				startLine: "GET /nonexistent HTTP/1.1",
 				headers:   []string{"Host: example.com"},
 				body:      "",
@@ -100,10 +107,11 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 				routerURL: "/nonexistent",
 				method:    "GET",
 			},
+			expectedURL: "",
 		},
 		{
-			expectedURL: "",
-			endpoint: httpRequest{
+			name: "wrong method returns nil",
+			request: httpRequest{
 				startLine: "POST /url/123 HTTP/1.1",
 				headers:   []string{"Host: example.com"},
 				body:      "",
@@ -112,25 +120,26 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 				routerURL: "/url/:id",
 				method:    "POST",
 			},
+			expectedURL: "",
 		},
 	}
 
-	for _, tt := range requests {
-		routerEndpoint := routerMock.FindMatchingRoute(&tt.endpoint)
-		if tt.expectedURL == "" {
-			if routerEndpoint != nil {
-				t.Errorf("failed, expected nil but got %s", routerEndpoint.Url)
-			}
-		} else {
-			if routerEndpoint == nil {
-				t.Errorf("test failed, expected %s but got nil", tt.expectedURL)
-			}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			routerEndpoint, err := routerMock.FindMatchingRoute(&tt.request)
 
-			if routerEndpoint.Url != tt.expectedURL {
-				t.Errorf("expected %s but got %s", tt.expectedURL, routerEndpoint.Url)
+			if tt.expectedURL == "" {
+				if err == nil {
+					t.Errorf("expected error but got %s", routerEndpoint.Url)
+				}
+			} else {
+				if routerEndpoint == nil {
+					t.Errorf("expected %s but got nil", tt.expectedURL)
+				} else if routerEndpoint.Url != tt.expectedURL {
+					t.Errorf("expected %s but got %s", tt.expectedURL, routerEndpoint.Url)
+				}
 			}
-		}
-
+		})
 	}
 }
 
@@ -212,4 +221,113 @@ func assertNoPanic(t *testing.T, f func()) {
 		}
 	}()
 	f()
+}
+
+func TestCompareRoutes(t *testing.T) {
+	tests := []struct {
+		name       string
+		requestUrl string
+		routerUrl  string
+		expected   bool
+	}{
+		// Exact matches
+		{
+			name:       "exact match",
+			requestUrl: "/users/profile",
+			routerUrl:  "/users/profile",
+			expected:   true,
+		},
+		{
+			name:       "exact match single segment",
+			requestUrl: "/users",
+			routerUrl:  "/users",
+			expected:   true,
+		},
+		// Dynamic parameters
+		{
+			name:       "dynamic parameter match",
+			requestUrl: "/users/123",
+			routerUrl:  "/users/:id",
+			expected:   true,
+		},
+		{
+			name:       "multiple dynamic parameters",
+			requestUrl: "/users/123/posts/456",
+			routerUrl:  "/users/:userId/posts/:postId",
+			expected:   true,
+		},
+		{
+			name:       "mixed static and dynamic",
+			requestUrl: "/api/users/john/profile",
+			routerUrl:  "/api/users/:name/profile",
+			expected:   true,
+		},
+		// Length mismatches
+		{
+			name:       "different number of segments",
+			requestUrl: "/users/123",
+			routerUrl:  "/users/123/posts",
+			expected:   false,
+		},
+		{
+			name:       "request has fewer segments",
+			requestUrl: "/users",
+			routerUrl:  "/users/123/posts",
+			expected:   false,
+		},
+		{
+			name:       "router has fewer segments",
+			requestUrl: "/users/123/posts",
+			routerUrl:  "/users/123",
+			expected:   false,
+		},
+		// Static mismatch
+		{
+			name:       "static segments don't match",
+			requestUrl: "/users/123",
+			routerUrl:  "/posts/123",
+			expected:   false,
+		},
+		{
+			name:       "different static segment in middle",
+			requestUrl: "/api/users/123/profile",
+			routerUrl:  "/api/posts/123/profile",
+			expected:   false,
+		},
+		// Edge cases
+		{
+			name:       "all dynamic parameters",
+			requestUrl: "/a/b/c",
+			routerUrl:  "/:x/:y/:z",
+			expected:   true,
+		},
+		{
+			name:       "all static segments",
+			requestUrl: "/users/profile/settings",
+			routerUrl:  "/users/profile/settings",
+			expected:   true,
+		},
+		{
+			name:       "empty paths",
+			requestUrl: "/",
+			routerUrl:  "/",
+			expected:   true,
+		},
+		{
+			name:       "single character dynamic parameter",
+			requestUrl: "/a",
+			routerUrl:  "/:id",
+			expected:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := compareRoutes(tt.requestUrl, tt.routerUrl)
+			if result != tt.expected {
+				t.Errorf("compareRoutes(%q, %q) = %v, want %v",
+					tt.requestUrl, tt.routerUrl, result, tt.expected)
+			}
+		})
+	}
 }

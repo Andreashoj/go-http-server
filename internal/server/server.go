@@ -37,7 +37,11 @@ func StartServer(port string, r router.Router) error {
 					return
 				}
 
-				route := r.FindMatchingRoute(request)
+				route, err := r.FindMatchingRoute(request)
+				if err != nil {
+					fmt.Printf("failed finding match for route: %s", err)
+					return
+				}
 				request.SetRouterURL(route.Url)
 				if route == nil {
 					return
