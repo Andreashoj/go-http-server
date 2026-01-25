@@ -16,8 +16,8 @@ import (
 // Router route tests [X]
 // Route grouping [X]
 // Middlewares [X]
+// Router config - allowed headers that is attached to all responses and same with middlewares [X]
 // Middlewares test
-// Router config - allowed headers that is attached to all responses and same with middlewares
 // Create test for writer
 
 func main() {
@@ -30,8 +30,15 @@ func main() {
 		fmt.Println("upper router middleware out")
 	})
 
+	r.Use(func(writer router.HTTPWriter, request router.HTTPRequest, next func()) {
+		fmt.Println("upper router middleware 2")
+		//writer.Header().Add(router.Host, "example.comz")
+		next()
+		fmt.Println("upper router middleware out 2")
+	})
+
 	r.Group("/user", func(u router.Router) {
-		r.Use(func(writer router.HTTPWriter, request router.HTTPRequest, next func()) {
+		u.Use(func(writer router.HTTPWriter, request router.HTTPRequest, next func()) {
 			fmt.Println("Yooo")
 			next()
 			fmt.Println("SUUUP")

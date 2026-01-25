@@ -11,6 +11,10 @@ func Respond(writer HTTPWriter, request HTTPRequest, middlewares []MiddlewareFun
 		handler = middlewareWrapper(writer, request, handler, middlewares[i])
 	}
 
+	//for i := 0; i < len(middlewares); i++ {
+	//	handler = middlewareWrapper(writer, request, handler, middlewares[i])
+	//}
+
 	handler()
 }
 
@@ -24,7 +28,7 @@ func GetMiddlewares(node *node) []MiddlewareFunc {
 	middlewares := node.middlewares
 
 	if node.parent != nil {
-		middlewares = append(middlewares, GetMiddlewares(node.parent)...)
+		middlewares = append(GetMiddlewares(node.parent), middlewares...)
 	}
 
 	return middlewares

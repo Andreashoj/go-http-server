@@ -203,9 +203,3 @@ func (r *router) Get(url string, handler func(writer HTTPWriter, request HTTPReq
 
 	r.add(newRoute)
 }
-
-// Create Use method
-// Use method should provide writer, request and next
-// next should reference the next middleware/handler
-// They should execute in a tree-like order grp1 mdlware1 mdlware2 => grp2 mdlware1 => handler and then reverse the order
-// I think I should create some sort of example of this
