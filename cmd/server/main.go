@@ -14,28 +14,31 @@ import (
 // Retrieve ID from URL [X]
 // Test get query param & get url param [X]
 // Router route tests [X]
-// Route grouping
+// Route grouping [X]
 // Middlewares
-// Router config - allowed headers that is attached to all responses
+// Router config - allowed headers that is attached to all responses and same with middlewares
 // Create test for writer
 
 func main() {
 	r := router.NewRouter()
 
 	r.Group("/user", func(u router.Router) {
-		// create new router within group
-		// This router should be a copy of the original router
-		// Create group of routers on main router
-		// So the question then becomes, how do I easily path match with a group of routers?
-		// Simply do a top down search?
-		// User can now add specific functionality to group router
-
 		u.Post("/my-other-route", func(writer router.HTTPWriter, request router.HTTPRequest) {
 			fmt.Println("my other route!")
 		})
 
 		u.Get("/tester", func(writer router.HTTPWriter, request router.HTTPRequest) {
 			writer.Respond("YOOOOO BOI", 200)
+		})
+
+		u.Group("/anz", func(a router.Router) {
+			u.Use(func() { // => register on router/node
+
+			})
+
+			a.Get("/yo", func(writer router.HTTPWriter, request router.HTTPRequest) {
+				writer.Respond("THIS BOY CRAZY", 200)
+			})
 		})
 	})
 

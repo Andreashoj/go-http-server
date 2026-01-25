@@ -145,7 +145,7 @@ func (r *router) FindMatchingRoute(request HTTPRequest) (*route, error) {
 }
 
 func (r *router) Group(url string, handler func(router Router)) {
-	var groupUrl = "/" + url
+	var groupUrl = url
 	if r.currentNode.path == "/" {
 		groupUrl = url
 	}
@@ -160,7 +160,6 @@ func (r *router) Group(url string, handler func(router Router)) {
 		currentNode: &nde,
 	}
 
-	fmt.Println()
 	handler(&rter)
 	r.currentNode.children = append(r.currentNode.children, nde)
 }
@@ -196,7 +195,6 @@ func (r *router) Post(url string, handler func(writer HTTPWriter, request HTTPRe
 }
 
 func (r *router) Get(url string, handler func(writer HTTPWriter, request HTTPRequest)) {
-	fmt.Println("url", url)
 	newRoute := route{
 		Url:     url,
 		Handler: handler,
@@ -205,3 +203,9 @@ func (r *router) Get(url string, handler func(writer HTTPWriter, request HTTPReq
 
 	r.add(newRoute)
 }
+
+// Create Use method
+// Use method should provide writer, request and next
+// next should reference the next middleware/handler
+// They should execute in a tree-like order grp1 mdlware1 mdlware2 => grp2 mdlware1 => handler and then reverse the order
+// I think I should create some sort of example of this
