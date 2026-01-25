@@ -51,11 +51,8 @@ func StartServer(port string, r router.Router) error {
 
 				// Writer
 				writer := router.NewHTTPWriter(cn, node.Route)
-
-				// Run middlewares and route handler
 				middlewares := router.GetMiddlewares(node)
 				router.Respond(writer, request, middlewares, node.Route.Handler)
-				//route.Handler(writer, request)
 			}()
 		}
 	}()

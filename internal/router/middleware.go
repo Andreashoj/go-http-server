@@ -1,5 +1,7 @@
 package router
 
+type MiddlewareFunc func(writer HTTPWriter, request HTTPRequest, next func())
+
 func Respond(writer HTTPWriter, request HTTPRequest, middlewares []MiddlewareFunc, httpHandler func(writer HTTPWriter, request HTTPRequest)) {
 	handler := func() {
 		httpHandler(writer, request)
@@ -11,8 +13,6 @@ func Respond(writer HTTPWriter, request HTTPRequest, middlewares []MiddlewareFun
 
 	handler()
 }
-
-type MiddlewareFunc func(writer HTTPWriter, request HTTPRequest, next func())
 
 func middlewareWrapper(w HTTPWriter, r HTTPRequest, next func(), middleware MiddlewareFunc) func() {
 	return func() {

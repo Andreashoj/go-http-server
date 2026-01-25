@@ -49,6 +49,7 @@ func (h *httpWriter) Respond(payload string, statusCode int) {
 	response.WriteString("\r\n")
 	response.WriteString(payload)
 
+	fmt.Println(response.String())
 	// Body
 	fmt.Fprint(h.conn, response.String())
 }

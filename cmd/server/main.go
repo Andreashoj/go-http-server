@@ -15,12 +15,20 @@ import (
 // Test get query param & get url param [X]
 // Router route tests [X]
 // Route grouping [X]
-// Middlewares
+// Middlewares [X]
+// Middlewares test
 // Router config - allowed headers that is attached to all responses and same with middlewares
 // Create test for writer
 
 func main() {
 	r := router.NewRouter()
+
+	r.Use(func(writer router.HTTPWriter, request router.HTTPRequest, next func()) {
+		fmt.Println("upper router middleware")
+		writer.Header().Add(router.Host, "example.comz")
+		next()
+		fmt.Println("upper router middleware out")
+	})
 
 	r.Group("/user", func(u router.Router) {
 		r.Use(func(writer router.HTTPWriter, request router.HTTPRequest, next func()) {
