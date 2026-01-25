@@ -23,6 +23,12 @@ func main() {
 	r := router.NewRouter()
 
 	r.Group("/user", func(u router.Router) {
+		r.Use(func(writer router.HTTPWriter, request router.HTTPRequest, next func()) {
+			fmt.Println("Yooo")
+			next()
+			fmt.Println("SUUUP")
+		})
+
 		u.Post("/my-other-route", func(writer router.HTTPWriter, request router.HTTPRequest) {
 			fmt.Println("my other route!")
 		})
@@ -32,9 +38,6 @@ func main() {
 		})
 
 		u.Group("/anz", func(a router.Router) {
-			u.Use(func() { // => register on router/node
-
-			})
 
 			a.Get("/yo", func(writer router.HTTPWriter, request router.HTTPRequest) {
 				writer.Respond("THIS BOY CRAZY", 200)

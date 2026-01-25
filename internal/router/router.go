@@ -10,8 +10,9 @@ type Router interface {
 	Post(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Put(url string, handler func(writer HTTPWriter, request HTTPRequest))
 	Delete(url string, handler func(writer HTTPWriter, request HTTPRequest))
-	FindMatchingRoute(request HTTPRequest) (*route, error)
+	FindMatchingRoute(request HTTPRequest) (*node, error)
 	Group(url string, router func(router Router))
+	Use(middlewareFunc func(writer HTTPWriter, request HTTPRequest, next func()))
 	add(route)
 }
 
@@ -20,7 +21,6 @@ type route struct {
 	Method  Request
 	Handler func(writer HTTPWriter, request HTTPRequest)
 	Request HTTPRequest
-	Group   []router
 }
 
 type router struct {
@@ -31,10 +31,10 @@ type node struct {
 	parent   *node
 	children []node
 	path     string
-	route    *route
+	Route    *route
 
 	// configs
-	middlewares any
+	middlewares []MiddlewareFunc
 	headers     any
 }
 
@@ -63,7 +63,7 @@ func (r *router) add(route route) {
 	nde := node{
 		parent: r.currentNode,
 		path:   route.Url,
-		route:  &route,
+		Route:  &route,
 	}
 
 	r.currentNode.children = append(r.currentNode.children, nde)
@@ -105,7 +105,7 @@ func compareRoutes(requestUrl, routerUrl string) bool {
 
 func findMatchingNode(requestUrl string, method Request, n *node) *node {
 	isRoot := n.path == "/"
-	if compareRoutes(requestUrl, n.path) && n.route.Method == method {
+	if compareRoutes(requestUrl, n.path) && n.Route.Method == method {
 		return n
 	}
 
@@ -122,7 +122,7 @@ func findMatchingNode(requestUrl string, method Request, n *node) *node {
 	// Check again on current path
 	var result *node
 	for _, child := range n.children {
-		if compareRoutes(requestUrl, child.path) && child.route.Method == method {
+		if compareRoutes(requestUrl, child.path) && child.Route.Method == method {
 			result = &child
 		} else if child.path == requestUrlsParts[0] {
 			result = findMatchingNode(strings.Join(requestUrlsParts, ""), method, &child)
@@ -136,12 +136,12 @@ func findMatchingNode(requestUrl string, method Request, n *node) *node {
 	return nil
 }
 
-func (r *router) FindMatchingRoute(request HTTPRequest) (*route, error) {
+func (r *router) FindMatchingRoute(request HTTPRequest) (*node, error) {
 	n := findMatchingNode(request.Url(), request.Method(), r.currentNode)
 	if n == nil {
 		return nil, fmt.Errorf("could not find match for request URL: %s", request.Url())
 	}
-	return n.route, nil
+	return n, nil
 }
 
 func (r *router) Group(url string, handler func(router Router)) {

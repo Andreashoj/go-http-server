@@ -37,19 +37,25 @@ func StartServer(port string, r router.Router) error {
 					return
 				}
 
-				route, err := r.FindMatchingRoute(request)
+				node, err := r.FindMatchingRoute(request)
 				if err != nil {
 					fmt.Printf("failed finding match for route: %s", err)
 					return
 				}
-				request.SetRouterURL(route.Url)
-				if route == nil {
+
+				if node.Route == nil {
 					return
 				}
 
+				request.SetRouterURL(node.Route.Url)
+
 				// Writer
-				writer := router.NewHTTPWriter(cn, route)
-				route.Handler(writer, request)
+				writer := router.NewHTTPWriter(cn, node.Route)
+
+				// Run middlewares and route handler
+				middlewares := router.GetMiddlewares(node)
+				router.Respond(writer, request, middlewares, node.Route.Handler)
+				//route.Handler(writer, request)
 			}()
 		}
 	}()
