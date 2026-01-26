@@ -6,10 +6,10 @@ import (
 	"net"
 	"strings"
 
-	"github.com/Andreashoj/go-http-server/internal/router"
+	router2 "github.com/Andreashoj/go-http-server/router"
 )
 
-func StartServer(port string, r router.Router) error {
+func StartServer(port string, r router2.Router) error {
 	listener, err := net.Listen("tcp", port)
 
 	if err != nil {
@@ -26,7 +26,7 @@ func StartServer(port string, r router.Router) error {
 			go func() {
 				defer cn.Close() // Should be disabled if http keep-alive is set
 				reader := bufio.NewReader(cn)
-				request, err := router.Parse(reader)
+				request, err := router2.Parse(reader)
 				if err != nil {
 					if strings.Contains(err.Error(), "EOF") { // handles empty requests
 						fmt.Println("empty request")
@@ -50,9 +50,9 @@ func StartServer(port string, r router.Router) error {
 				request.SetRouterURL(node.Route.Url)
 
 				// Writer
-				writer := router.NewHTTPWriter(cn, node.Route.Method)
-				middlewares := router.GetMiddlewares(node)
-				handler := router.ApplyMiddlewares(writer, request, middlewares, node.Route.Handler)
+				writer := router2.NewHTTPWriter(cn, node.Route.Method)
+				middlewares := router2.GetMiddlewares(node)
+				handler := router2.ApplyMiddlewares(writer, request, middlewares, node.Route.Handler)
 				handler()
 			}()
 		}
