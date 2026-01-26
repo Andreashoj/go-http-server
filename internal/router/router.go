@@ -28,14 +28,11 @@ type router struct {
 }
 
 type node struct {
-	parent   *node
-	children []node
-	path     string
-	Route    *route
-
-	// configs
+	parent      *node
+	children    []node
+	path        string
+	Route       *route
 	middlewares []MiddlewareFunc
-	headers     any
 }
 
 func NewRouter() Router {

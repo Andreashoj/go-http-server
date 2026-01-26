@@ -50,9 +50,10 @@ func StartServer(port string, r router.Router) error {
 				request.SetRouterURL(node.Route.Url)
 
 				// Writer
-				writer := router.NewHTTPWriter(cn, node.Route)
+				writer := router.NewHTTPWriter(cn, node.Route.Method)
 				middlewares := router.GetMiddlewares(node)
-				router.Respond(writer, request, middlewares, node.Route.Handler)
+				handler := router.ApplyMiddlewares(writer, request, middlewares, node.Route.Handler)
+				handler()
 			}()
 		}
 	}()

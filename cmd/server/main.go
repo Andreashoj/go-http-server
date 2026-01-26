@@ -17,8 +17,9 @@ import (
 // Route grouping [X]
 // Middlewares [X]
 // Router config - allowed headers that is attached to all responses and same with middlewares [X]
-// Middlewares test
-// Create test for writer
+// Middlewares test [X] []
+// Create test for writer []
+// Restructure for library package []
 
 func main() {
 	r := router.NewRouter()
@@ -49,13 +50,13 @@ func main() {
 		})
 
 		u.Get("/tester", func(writer router.HTTPWriter, request router.HTTPRequest) {
-			writer.Respond("YOOOOO BOI", 200)
+			writer.FormatResponse("YOOOOO BOI", 200)
 		})
 
 		u.Group("/anz", func(a router.Router) {
 
 			a.Get("/yo", func(writer router.HTTPWriter, request router.HTTPRequest) {
-				writer.Respond("THIS BOY CRAZY", 200)
+				writer.FormatResponse("THIS BOY CRAZY", 200)
 			})
 		})
 	})
@@ -65,7 +66,7 @@ func main() {
 		urlParam, _ := request.GetURLParam("id")
 		fmt.Println("param", urlParam)
 
-		writer.Respond(fmt.Sprintf("HERE YOU GO: %s", urlParam), 200)
+		writer.FormatResponse(fmt.Sprintf("HERE YOU GO: %s", urlParam), 200)
 	})
 
 	r.Post("/url", func(w router.HTTPWriter, r router.HTTPRequest) {
@@ -78,7 +79,7 @@ func main() {
 		}
 		fmt.Println(param)
 
-		w.Respond("epicposthasd fasdf asdf asd", 200)
+		w.FormatResponse("epicposthasd fasdf asdf asd", 200)
 	})
 
 	if err := server.StartServer(":8080", r); err != nil {

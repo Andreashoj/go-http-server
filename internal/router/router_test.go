@@ -126,17 +126,17 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			routerEndpoint, err := routerMock.FindMatchingRoute(&tt.request)
+			routerNode, err := routerMock.FindMatchingRoute(&tt.request)
 
 			if tt.expectedURL == "" {
 				if err == nil {
-					t.Errorf("expected error but got %s", routerEndpoint.Url)
+					t.Errorf("expected error but got %s", routerNode.Route.Url)
 				}
 			} else {
-				if routerEndpoint == nil {
+				if routerNode == nil {
 					t.Errorf("expected %s but got nil", tt.expectedURL)
-				} else if routerEndpoint.Url != tt.expectedURL {
-					t.Errorf("expected %s but got %s", tt.expectedURL, routerEndpoint.Url)
+				} else if routerNode.Route.Url != tt.expectedURL {
+					t.Errorf("expected %s but got %s", tt.expectedURL, routerNode.Route.Url)
 				}
 			}
 		})
