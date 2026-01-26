@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	router2 "github.com/Andreashoj/go-http-server/router"
 )
@@ -15,6 +18,9 @@ func StartServer(port string, r router2.Router) error {
 	if err != nil {
 		return fmt.Errorf("Failed creating listener for TCP on port: 8080, with error %s\n", err)
 	}
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		for {
@@ -57,6 +63,11 @@ func StartServer(port string, r router2.Router) error {
 			}()
 		}
 	}()
+
+	fmt.Printf("Server listening on %s\n", port)
+	<-done
+	fmt.Printf("Shutting down server...")
+	listener.Close()
 
 	return nil
 }
