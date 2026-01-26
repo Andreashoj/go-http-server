@@ -35,7 +35,6 @@ func StartServer(port string, r router2.Router) error {
 				request, err := router2.Parse(reader)
 				if err != nil {
 					if strings.Contains(err.Error(), "EOF") { // handles empty requests
-						fmt.Println("empty request")
 						return
 					}
 
