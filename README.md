@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	r := router.New()
+	r := router.NewRouter()
 
 	// Define a route
 	r.Get("/hello", func(w router.HTTPWriter, req router.HTTPRequest) {
