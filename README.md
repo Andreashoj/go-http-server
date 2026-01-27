@@ -16,10 +16,11 @@ package main
 import (
 	"fmt"
 	"github.com/Andreashoj/go-http-server/router"
+	"github.com/Andreashoj/go-http-server/server"
 )
 
 func main() {
-	r := router.New()
+	r := router.NewRouter()
 
 	// Define a route
 	r.Get("/hello", func(w router.HTTPWriter, req router.HTTPRequest) {
@@ -28,7 +29,7 @@ func main() {
 	})
 
 	// Start listening
-	router.StartServer(":8080", r)
+	server.StartServer(":8080", r)
 }
 ```
 
