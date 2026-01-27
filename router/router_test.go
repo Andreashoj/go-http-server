@@ -22,7 +22,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "exact match static route",
 			request: httpRequest{
 				startLine: "GET /url HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/url",
@@ -35,7 +35,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "dynamic parameter match",
 			request: httpRequest{
 				startLine: "GET /url/123 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/url/123",
@@ -48,7 +48,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "static POST route",
 			request: httpRequest{
 				startLine: "POST /users/example HTTP/1.1",
-				headers:   []string{"Host: example.com", "Content-Type: application/json"},
+				headers:   map[string]string{"Host": "example.com", "Content-Type": "application/json"},
 				body:      `{"name":"test"}`,
 				params:    nil,
 				url:       "/users/example",
@@ -61,7 +61,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "static PUT route",
 			request: httpRequest{
 				startLine: "PUT /user HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/user",
@@ -74,7 +74,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "multiple dynamic parameters",
 			request: httpRequest{
 				startLine: "GET /posts/42/comments/789 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/posts/42/comments/789",
@@ -87,7 +87,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "DELETE route with dynamic parameter",
 			request: httpRequest{
 				startLine: "DELETE /items/999 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/items/999",
@@ -100,7 +100,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "nonexistent route returns nil",
 			request: httpRequest{
 				startLine: "GET /nonexistent HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/nonexistent",
@@ -113,7 +113,7 @@ func Test_router_FindMatchingRoute(t *testing.T) {
 			name: "wrong method returns nil",
 			request: httpRequest{
 				startLine: "POST /url/123 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/url/123",

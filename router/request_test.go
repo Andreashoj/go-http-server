@@ -14,7 +14,7 @@ func Test_httpRequest_GetQueryParam(t *testing.T) {
 			expectedValue: "123",
 			request: httpRequest{
 				startLine: "GET /url?test=123 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    map[string]string{"test": "123"},
 				url:       "/url",
@@ -27,7 +27,7 @@ func Test_httpRequest_GetQueryParam(t *testing.T) {
 			expectedValue: "456",
 			request: httpRequest{
 				startLine: "GET /users?id=456&name=john HTTP/1.1",
-				headers:   []string{"Host: api.example.com"},
+				headers:   map[string]string{"Host": "api.example.com"},
 				body:      "",
 				params:    map[string]string{"id": "456", "name": "john"},
 				url:       "/users",
@@ -40,7 +40,7 @@ func Test_httpRequest_GetQueryParam(t *testing.T) {
 			expectedValue: "golang",
 			request: httpRequest{
 				startLine: "POST /search HTTP/1.1",
-				headers:   []string{"Host: example.com", "Content-Type: application/x-www-form-urlencoded"},
+				headers:   map[string]string{"Host": "example.com", "Content-Type": "application/x-www-form-urlencoded"},
 				body:      "search=golang&limit=10",
 				params:    map[string]string{"search": "golang", "limit": "10"},
 				url:       "/search",
@@ -53,7 +53,7 @@ func Test_httpRequest_GetQueryParam(t *testing.T) {
 			expectedValue: "",
 			request: httpRequest{
 				startLine: "GET /test HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    map[string]string{},
 				url:       "/test",
@@ -66,7 +66,7 @@ func Test_httpRequest_GetQueryParam(t *testing.T) {
 			expectedValue: "abc123xyz",
 			request: httpRequest{
 				startLine: "GET /api/data?token=abc123xyz HTTP/1.1",
-				headers:   []string{"Host: api.example.com", "Authorization: Bearer token"},
+				headers:   map[string]string{"Host": "api.example.com", "Authorization": "Bearer token"},
 				body:      "",
 				params:    map[string]string{"token": "abc123xyz"},
 				url:       "/api/data",
@@ -99,7 +99,7 @@ func Test_httpRequest_GetURLParam(t *testing.T) {
 			expectedValue: "123",
 			request: httpRequest{
 				startLine: "GET /url/123 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/url/123",
@@ -112,7 +112,7 @@ func Test_httpRequest_GetURLParam(t *testing.T) {
 			expectedValue: "john",
 			request: httpRequest{
 				startLine: "GET /users/john HTTP/1.1",
-				headers:   []string{"Host: api.example.com"},
+				headers:   map[string]string{"Host": "api.example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/users/john",
@@ -125,7 +125,7 @@ func Test_httpRequest_GetURLParam(t *testing.T) {
 			expectedValue: "456",
 			request: httpRequest{
 				startLine: "GET /posts/456/comments/789 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/posts/456/comments/789",
@@ -138,7 +138,7 @@ func Test_httpRequest_GetURLParam(t *testing.T) {
 			expectedValue: "789",
 			request: httpRequest{
 				startLine: "GET /posts/456/comments/789 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/posts/456/comments/789",
@@ -151,7 +151,7 @@ func Test_httpRequest_GetURLParam(t *testing.T) {
 			expectedValue: "",
 			request: httpRequest{
 				startLine: "GET /url/123 HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/url/123",
@@ -164,7 +164,7 @@ func Test_httpRequest_GetURLParam(t *testing.T) {
 			expectedValue: "my-post-title",
 			request: httpRequest{
 				startLine: "GET /blog/my-post-title HTTP/1.1",
-				headers:   []string{"Host: example.com"},
+				headers:   map[string]string{"Host": "example.com"},
 				body:      "",
 				params:    nil,
 				url:       "/blog/my-post-title",

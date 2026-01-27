@@ -140,7 +140,7 @@ func TestHttpWriter_FormatResponse(t *testing.T) {
 			for _, h := range tt.headers {
 				writer.Header().Add(h.key, h.value)
 			}
-			writer.FormatResponse(tt.payload, tt.statusCode)
+			writer.Response(tt.payload, tt.statusCode)
 
 			if !slices.Equal(mockConn.written, tt.expectedWrite) {
 				t.Errorf("expected write to be %s but got %s", tt.expectedWrite, mockConn.written)
