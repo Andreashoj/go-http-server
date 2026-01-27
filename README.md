@@ -24,7 +24,7 @@ func main() {
 	// Define a route
 	r.Get("/hello", func(w router.HTTPWriter, req router.HTTPRequest) {
 		w.Header().Add(router.ContentType, "text/plain")
-		w.FormatResponse("Hello, World!", 200)
+		w.Response("Hello, World!", 200)
 	})
 
 	// Start listening
@@ -50,7 +50,7 @@ r.Post("/api/users", func(w router.HTTPWriter, req router.HTTPRequest) {
 	body := req.Body()
 	
 	w.Header().Add(router.ContentType, "application/json")
-	w.FormatResponse(`{"id":1,"name":"test"}`, 201)
+	w.Response(`{"id":1,"name":"test"}`, 201)
 })
 ```
 
@@ -59,12 +59,12 @@ r.Post("/api/users", func(w router.HTTPWriter, req router.HTTPRequest) {
 r.Get("/users/:id", func(w router.HTTPWriter, req router.HTTPRequest) {
 	id, err := req.GetURLParam("id")
 	if err != nil {
-		w.FormatResponse("User not found", 404)
+		w.Response("User not found", 404)
 		return
 	}
 	
 	w.Header().Add(router.ContentType, "application/json")
-	w.FormatResponse(fmt.Sprintf(`{"id":"%s"}`, id), 200)
+	w.Response(fmt.Sprintf(`{"id":"%s"}`, id), 200)
 })
 ```
 
@@ -73,24 +73,26 @@ r.Get("/users/:id", func(w router.HTTPWriter, req router.HTTPRequest) {
 r.Get("/search", func(w router.HTTPWriter, req router.HTTPRequest) {
 	query, err := req.GetQueryParam("q")
 	if err != nil {
-		w.FormatResponse("Missing query parameter", 400)
+		w.Response("Missing query parameter", 400)
 		return
 	}
 	
 	w.Header().Add(router.ContentType, "application/json")
-	w.FormatResponse(fmt.Sprintf(`{"results":"%s"}`, query), 200)
+	w.Response(fmt.Sprintf(`{"results":"%s"}`, query), 200)
 })
 ```
 
 ### Middleware
 ```go
 authMiddleware := func(w router.HTTPWriter, req router.HTTPRequest, next func()) {
-    // Check auth headers or tokens
-    if req.Method() != router.Get {
-        next()
+    // Check authorization header
+    authHeader, err := req.GetHeader("Authorization")
+    if err != nil || authHeader == "" {
+        w.Response(`{"error":"Unauthorized"}`, 401)
         return
     }
-	
+
+    // Token is valid, proceed to next middleware/handler
     next()
 }
 
