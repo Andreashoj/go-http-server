@@ -168,7 +168,7 @@ func testMiddlewareWrapper(
 
 type mockWriter struct{}
 
-func (h *mockWriter) FormatResponse(payload string, statusCode int) {}
+func (h *mockWriter) Response(payload string, statusCode int) {}
 
 func (h *mockWriter) Header() Header {
 	return &header{}

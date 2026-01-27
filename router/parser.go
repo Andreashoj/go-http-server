@@ -29,12 +29,12 @@ func Parse(reader *bufio.Reader) (HTTPRequest, error) {
 	request.params = params
 
 	// Handle headers
-	headers, err := parseHeaders(reader)
+	headerLines, headers, err := parseHeaders(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed parsing headers: %s", err)
 	}
 	request.headers = headers
-	contentLength, err := getContentLength(headers)
+	contentLength, err := getContentLength(headerLines)
 	if err != nil {
 		return nil, fmt.Errorf("content length is specified but failed retrieving it: %s", err)
 	}
@@ -111,13 +111,14 @@ func parseParams(startLine string) (map[string]string, error) {
 	return params, nil
 }
 
-func parseHeaders(reader *bufio.Reader) ([]string, error) {
-	var headers []string
+func parseHeaders(reader *bufio.Reader) ([]string, map[string]string, error) {
+	var lines []string
+	headers := make(map[string]string)
 	var hasHost bool
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			return nil, fmt.Errorf("failed decoding header, err: %s", err)
+			return nil, nil, fmt.Errorf("failed decoding header, err: %s", err)
 		}
 
 		// body starts
@@ -128,11 +129,11 @@ func parseHeaders(reader *bufio.Reader) ([]string, error) {
 		// Validate "value: key" format
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("malformed header format")
+			return nil, nil, fmt.Errorf("malformed header format")
 		}
 
-		headerKey := strings.TrimSpace(strings.ToLower(string(parts[0])))
-		headerValue := strings.TrimSpace(strings.ToLower(string(parts[1])))
+		headerKey := strings.TrimSpace(strings.ToLower(parts[0]))
+		headerValue := strings.TrimSpace(strings.ToLower(parts[1]))
 
 		// Validate host exists
 		if headerKey == "host" && headerValue != "" {
@@ -143,18 +144,19 @@ func parseHeaders(reader *bufio.Reader) ([]string, error) {
 		if headerKey == "content-length" {
 			length, err := strconv.Atoi(headerValue)
 			if err != nil || length < 0 {
-				return nil, fmt.Errorf("invalid content length value: %s", err)
+				return nil, nil, fmt.Errorf("invalid content length value: %s", err)
 			}
 		}
 
-		headers = append(headers, line)
+		headers[headerKey] = headerValue
+		lines = append(lines, line)
 	}
 
 	if !hasHost {
-		return nil, fmt.Errorf("failed because no host header was present")
+		return nil, nil, fmt.Errorf("failed because no host header was present")
 	}
 
-	return headers, nil
+	return lines, headers, nil
 }
 
 func getContentLength(headers []string) (int, error) {

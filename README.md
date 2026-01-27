@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	r := router.NewRouter()
+	r := router.New()
 
 	// Define a route
 	r.Get("/hello", func(w router.HTTPWriter, req router.HTTPRequest) {
@@ -46,16 +46,52 @@ Visit `http://localhost:8080/hello` and boom, you got a response.
 ### POST with JSON
 ```go
 r.Post("/api/users", func(w router.HTTPWriter, req router.HTTPRequest) {
+	// Get the request body
+	body := req.Body()
+	
 	w.Header().Add(router.ContentType, "application/json")
 	w.FormatResponse(`{"id":1,"name":"test"}`, 201)
+})
+```
+
+### Extract URL Parameters
+```go
+r.Get("/users/:id", func(w router.HTTPWriter, req router.HTTPRequest) {
+	id, err := req.GetURLParam("id")
+	if err != nil {
+		w.FormatResponse("User not found", 404)
+		return
+	}
+	
+	w.Header().Add(router.ContentType, "application/json")
+	w.FormatResponse(fmt.Sprintf(`{"id":"%s"}`, id), 200)
+})
+```
+
+### Query Parameters
+```go
+r.Get("/search", func(w router.HTTPWriter, req router.HTTPRequest) {
+	query, err := req.GetQueryParam("q")
+	if err != nil {
+		w.FormatResponse("Missing query parameter", 400)
+		return
+	}
+	
+	w.Header().Add(router.ContentType, "application/json")
+	w.FormatResponse(fmt.Sprintf(`{"results":"%s"}`, query), 200)
 })
 ```
 
 ### Middleware
 ```go
 authMiddleware := func(w router.HTTPWriter, req router.HTTPRequest, next func()) {
-	// Check auth
-	next()
+    // Check auth headers or tokens
+    if req.Method() != router.Get {
+        next()
+        return
+    }
+	
+    next()
 }
 
 r.Use(authMiddleware)

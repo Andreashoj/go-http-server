@@ -25,12 +25,12 @@ type HTTPRequest interface {
 	Url() string
 	Method() Request
 	SetRouterURL(url string)
-	GetRouterURL() string
+	GetHeader(key string) (string, error)
 }
 
 type httpRequest struct {
 	startLine string
-	headers   []string
+	headers   map[string]string
 	body      string
 	params    map[string]string
 	url       string
@@ -40,7 +40,8 @@ type httpRequest struct {
 
 func NewHTTPRequest() HTTPRequest {
 	return &httpRequest{
-		params: make(map[string]string),
+		params:  make(map[string]string),
+		headers: make(map[string]string),
 	}
 }
 
@@ -87,4 +88,13 @@ func (r *httpRequest) SetRouterURL(url string) {
 
 func (r *httpRequest) GetRouterURL() string {
 	return r.routerURL
+}
+
+func (r *httpRequest) GetHeader(key string) (string, error) {
+	value, exists := r.headers[strings.ToLower(key)]
+	if !exists {
+		return "", fmt.Errorf("could not find key %s\n", key)
+	}
+
+	return value, nil
 }

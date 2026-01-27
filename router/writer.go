@@ -7,7 +7,7 @@ import (
 )
 
 type HTTPWriter interface {
-	FormatResponse(payload string, statusCode int)
+	Response(payload string, statusCode int)
 	Header() Header
 	addHeader(header Header)
 }
@@ -29,7 +29,7 @@ func NewHTTPWriter(conn Connection, method Request) HTTPWriter {
 	}
 }
 
-func (h *httpWriter) FormatResponse(payload string, statusCode int) {
+func (h *httpWriter) Response(payload string, statusCode int) {
 	// Create HTTP format response
 	var response strings.Builder
 	status := strconv.Itoa(statusCode)
